@@ -10,9 +10,9 @@ type TileProps = {
 };
 
 const VARIANT_CLASSES: Record<TileVariant, string> = {
-  gray: "bg-[#dcdcdc] text-[#2b2b29] dark:bg-[#52525b] dark:text-[#e4e4e7]",
-  yellow: "bg-[#f9df6d] text-[#613805] dark:bg-[#7c5e10] dark:text-[#fde68a]",
-  green: "bg-[#a0c35a] text-[#264d0d] dark:bg-[#3f5f2a] dark:text-[#d9f2c4]",
+  gray: "bg-[#dcdcdc] text-[#2b2b29] dark:bg-[#232326] dark:text-[#5a5a60]",
+  yellow: "bg-[#f9df6d] text-[#613805]",
+  green: "bg-[#a0c35a] text-[#264d0d]",
 };
 
 const STATE_CLASSES: Record<TileState, string> = {
