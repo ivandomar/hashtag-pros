@@ -7,6 +7,7 @@ type TileProps = {
   col: number;
   row: number;
   state?: TileState;
+  onClick?: () => void;
 };
 
 const VARIANT_CLASSES: Record<TileVariant, string> = {
@@ -21,15 +22,18 @@ const STATE_CLASSES: Record<TileState, string> = {
   selected: "border-[3px] border-[#2babf0]",
 };
 
-function Tile({ letter, variant, col, row, state = "default" }: TileProps) {
+function Tile({ letter, variant, col, row, state = "default", onClick }: TileProps) {
   return (
-    <div
-      className={`flex items-center justify-center font-ui text-[30px] font-medium
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={state === "selected"}
+      className={`flex cursor-pointer items-center justify-center font-ui text-[30px] font-medium select-none
         ${VARIANT_CLASSES[variant]} ${STATE_CLASSES[state]}`}
       style={{ gridColumn: col, gridRow: row }}
     >
       {letter}
-    </div>
+    </button>
   );
 }
 

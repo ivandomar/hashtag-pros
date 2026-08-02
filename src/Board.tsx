@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Tile, { type TileVariant } from "./Tile";
 import boardConfig from "./board.json";
 
@@ -9,17 +10,65 @@ type BoardTile = {
   variant: TileVariant;
 };
 
-const TILES = boardConfig.tiles as BoardTile[];
+const INITIAL_TILES = boardConfig.tiles as BoardTile[];
 
 function Board() {
+  const [tiles, setTiles] = useState<BoardTile[]>(INITIAL_TILES);
+  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+
+  const handleTileClick = (position: number) => {
+    if (selectedPosition === null) {
+      setSelectedPosition(position);
+
+      return;
+    }
+
+    if (selectedPosition === position) {
+      setSelectedPosition(null);
+
+      return;
+    }
+
+    setTiles((previousTiles) => {
+      const first = previousTiles.find((tile) => tile.position === selectedPosition);
+      const second = previousTiles.find((tile) => tile.position === position);
+
+      if (!first || !second) {
+        return previousTiles;
+      }
+
+      return previousTiles.map((tile) => {
+        if (tile.position === selectedPosition) {
+          return { ...tile, letter: second.letter };
+        }
+
+        if (tile.position === position) {
+          return { ...tile, letter: first.letter };
+        }
+
+        return tile;
+      });
+    });
+
+    setSelectedPosition(null);
+  };
+
   return (
     <div
       className="flex aspect-square h-[min(100%,680px)] w-auto min-h-0 min-w-0 items-center justify-center
         [container-type:size]"
     >
       <div className="grid h-[min(100cqw,100cqh)] w-[min(100cqw,100cqh)] grid-cols-5 grid-rows-5">
-        {TILES.map((tile) => (
-          <Tile key={tile.position} letter={tile.letter} variant={tile.variant} col={tile.col} row={tile.row} />
+        {tiles.map((tile) => (
+          <Tile
+            key={tile.position}
+            letter={tile.letter}
+            variant={tile.variant}
+            col={tile.col}
+            row={tile.row}
+            state={tile.position === selectedPosition ? "selected" : "default"}
+            onClick={() => handleTileClick(tile.position)}
+          />
         ))}
       </div>
     </div>
