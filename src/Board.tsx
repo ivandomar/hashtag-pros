@@ -42,8 +42,15 @@ function Board({ movesLeft, onSwap }: BoardProps) {
     RAW_TILES.map((tile) => ({ ...tile, variant: getTileVariant(tile.col, tile.row, tile.letter) })),
   );
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+  const [hasWon, setHasWon] = useState(false);
 
   const handleTileClick = (position: number) => {
+    if (hasWon) {
+      window.alert("Você já venceu! Não é possível continuar jogando.");
+
+      return;
+    }
+
     if (movesLeft <= 0) {
       window.alert("Seus movimentos acabaram! Não é possível selecionar mais peças.");
 
@@ -62,29 +69,33 @@ function Board({ movesLeft, onSwap }: BoardProps) {
       return;
     }
 
-    setTiles((previousTiles) => {
-      const first = previousTiles.find((tile) => tile.position === selectedPosition);
-      const second = previousTiles.find((tile) => tile.position === position);
+    const first = tiles.find((tile) => tile.position === selectedPosition);
+    const second = tiles.find((tile) => tile.position === position);
 
-      if (!first || !second) {
-        return previousTiles;
+    if (!first || !second) {
+      return;
+    }
+
+    const nextTiles = tiles.map((tile) => {
+      if (tile.position === selectedPosition) {
+        return { ...tile, letter: second.letter, variant: getTileVariant(tile.col, tile.row, second.letter) };
       }
 
-      return previousTiles.map((tile) => {
-        if (tile.position === selectedPosition) {
-          return { ...tile, letter: second.letter, variant: getTileVariant(tile.col, tile.row, second.letter) };
-        }
+      if (tile.position === position) {
+        return { ...tile, letter: first.letter, variant: getTileVariant(tile.col, tile.row, first.letter) };
+      }
 
-        if (tile.position === position) {
-          return { ...tile, letter: first.letter, variant: getTileVariant(tile.col, tile.row, first.letter) };
-        }
-
-        return tile;
-      });
+      return tile;
     });
 
+    setTiles(nextTiles);
     setSelectedPosition(null);
     onSwap();
+
+    if (nextTiles.every((tile) => tile.variant === "green")) {
+      setHasWon(true);
+      window.alert("Parabéns! Você venceu o jogo!");
+    }
   };
 
   return (
