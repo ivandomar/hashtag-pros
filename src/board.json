@@ -1,0 +1,26 @@
+{
+  "words": {
+    "row2": "FACES",
+    "row4": "VISTA",
+    "col2": "MACIO",
+    "col4": "CERTO"
+  },
+  "tiles": [
+    { "position": 1, "col": 2, "row": 1, "letter": "C", "variant": "yellow" },
+    { "position": 2, "col": 4, "row": 1, "letter": "V", "variant": "gray" },
+    { "position": 3, "col": 1, "row": 2, "letter": "F", "variant": "green" },
+    { "position": 4, "col": 2, "row": 2, "letter": "A", "variant": "green" },
+    { "position": 5, "col": 3, "row": 2, "letter": "I", "variant": "gray" },
+    { "position": 6, "col": 4, "row": 2, "letter": "S", "variant": "yellow" },
+    { "position": 7, "col": 5, "row": 2, "letter": "T", "variant": "gray" },
+    { "position": 8, "col": 2, "row": 3, "letter": "A", "variant": "yellow" },
+    { "position": 9, "col": 4, "row": 3, "letter": "R", "variant": "green" },
+    { "position": 10, "col": 1, "row": 4, "letter": "O", "variant": "gray" },
+    { "position": 11, "col": 2, "row": 4, "letter": "O", "variant": "yellow" },
+    { "position": 12, "col": 3, "row": 4, "letter": "M", "variant": "gray" },
+    { "position": 13, "col": 4, "row": 4, "letter": "C", "variant": "yellow" },
+    { "position": 14, "col": 5, "row": 4, "letter": "C", "variant": "gray" },
+    { "position": 15, "col": 2, "row": 5, "letter": "E", "variant": "gray" },
+    { "position": 16, "col": 4, "row": 5, "letter": "S", "variant": "gray" }
+  ]
+}
