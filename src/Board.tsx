@@ -10,13 +10,24 @@ type BoardTile = {
   variant: TileVariant;
 };
 
+type BoardProps = {
+  movesLeft: number;
+  onSwap: () => void;
+};
+
 const INITIAL_TILES = boardConfig.tiles as BoardTile[];
 
-function Board() {
+function Board({ movesLeft, onSwap }: BoardProps) {
   const [tiles, setTiles] = useState<BoardTile[]>(INITIAL_TILES);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
 
   const handleTileClick = (position: number) => {
+    if (movesLeft <= 0) {
+      window.alert("Seus movimentos acabaram! Não é possível selecionar mais peças.");
+
+      return;
+    }
+
     if (selectedPosition === null) {
       setSelectedPosition(position);
 
@@ -51,6 +62,7 @@ function Board() {
     });
 
     setSelectedPosition(null);
+    onSwap();
   };
 
   return (

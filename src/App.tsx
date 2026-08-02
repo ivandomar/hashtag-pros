@@ -4,12 +4,19 @@ import Scoreboard from "./Scoreboard";
 import Board from "./Board";
 import AdSlot from "./AdSlot";
 
+const INITIAL_MOVES = 12;
+
 function App() {
   const [isDark, setIsDark] = useState(true);
+  const [movesLeft, setMovesLeft] = useState(INITIAL_MOVES);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
+
+  const handleSwap = () => {
+    setMovesLeft((previous) => Math.max(previous - 1, 0));
+  };
 
   return (
     <div
@@ -19,8 +26,8 @@ function App() {
       <Header isDark={isDark} onToggleTheme={() => setIsDark((previous) => !previous)} />
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 md:flex-row md:gap-16">
-        <Scoreboard movesLeft={3} />
-        <Board />
+        <Scoreboard movesLeft={movesLeft} />
+        <Board movesLeft={movesLeft} onSwap={handleSwap} />
       </div>
 
       <AdSlot />
