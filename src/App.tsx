@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import ThemeSwitch from "./ThemeSwitch";
+import Header from "./Header";
+import Scoreboard from "./Scoreboard";
+import Board from "./Board";
+import AdSlot from "./AdSlot";
 
 function App() {
   const [isDark, setIsDark] = useState(true);
@@ -9,15 +12,19 @@ function App() {
   }, [isDark]);
 
   return (
-    <main
-      className={
-        "flex min-h-screen flex-col items-center justify-center gap-6 bg-zinc-100 text-zinc-700 " +
-        "dark:bg-zinc-900 dark:text-zinc-300"
-      }
+    <div
+      className="flex h-dvh w-full flex-col gap-[50px] overflow-hidden bg-[#f6fff5] px-8 pt-16 pb-[66px]
+        dark:bg-zinc-900"
     >
-      <h1 className="text-4xl font-semibold">Hashtag pro</h1>
-      <ThemeSwitch isDark={isDark} onToggle={() => setIsDark((previous) => !previous)} />
-    </main>
+      <Header isDark={isDark} onToggleTheme={() => setIsDark((previous) => !previous)} />
+
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 md:flex-row md:gap-16">
+        <Scoreboard movesLeft={3} />
+        <Board />
+      </div>
+
+      <AdSlot />
+    </div>
   );
 }
 
