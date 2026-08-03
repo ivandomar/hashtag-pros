@@ -4,7 +4,7 @@ import Scoreboard from "./Scoreboard";
 import Board from "./Board";
 import AdSlot from "./AdSlot";
 
-const INITIAL_MOVES = 1;
+const INITIAL_MOVES = 12;
 
 function App() {
   const [isDark, setIsDark] = useState(true);
