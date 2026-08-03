@@ -4,7 +4,7 @@ type ThemeSwitchProps = {
 };
 
 function ThemeSwitch({ isDark, onToggle }: ThemeSwitchProps) {
-  const knobPosition = isDark ? "translate-x-[47.7px]" : "translate-x-0";
+  const knobPosition = isDark ? "translate-x-[23.85px]" : "translate-x-0";
 
   return (
     <div className="flex shrink-0 flex-col items-center gap-1">
@@ -14,11 +14,11 @@ function ThemeSwitch({ isDark, onToggle }: ThemeSwitchProps) {
         aria-checked={isDark}
         aria-label="Alternar tema claro/escuro"
         onClick={onToggle}
-        className="relative h-[39px] w-[86.735px] rounded-full bg-[#d4d4d8] transition-colors duration-200
+        className="relative h-[19.5px] w-[43.3675px] rounded-full bg-[#d4d4d8] transition-colors duration-200
           dark:bg-[#52525b]"
       >
         <span
-          className={`absolute top-[4.34px] left-[4.34px] size-[30.357px] rounded-full
+          className={`absolute top-[2.17px] left-[2.17px] size-[15.1785px] rounded-full
             bg-gradient-to-b from-[#fafafa] to-[#e8eaea] transition-transform duration-200 ${knobPosition}`}
         />
       </button>
