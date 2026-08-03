@@ -22,26 +22,49 @@ type BoardProps = {
 const RAW_TILES = boardConfig.tiles as RawTile[];
 const WORDS: Record<string, string | undefined> = boardConfig.words;
 
-function getTileVariant(col: number, row: number, letter: string): TileVariant {
-  const horizontalWord = WORDS[`row${row}`];
-  const verticalWord = WORDS[`col${col}`];
-  const correctLetter = horizontalWord?.[col - 1] ?? verticalWord?.[row - 1];
+function isLetterNeeded(word: string | undefined, letter: string, wordTiles: RawTile[], axis: "row" | "col"): boolean {
+  if (!word || !word.includes(letter)) {
+    return false;
+  }
 
-  if (letter === correctLetter) {
+  const requiredCount = [...word].filter((char) => char === letter).length;
+  const claimedCount = wordTiles.filter((tile) => {
+    const index = axis === "row" ? tile.col - 1 : tile.row - 1;
+
+    return word[index] === letter && tile.letter === letter;
+  }).length;
+
+  return claimedCount < requiredCount;
+}
+
+function getTileVariant(tile: RawTile, allTiles: RawTile[]): TileVariant {
+  const horizontalWord = WORDS[`row${tile.row}`];
+  const verticalWord = WORDS[`col${tile.col}`];
+  const correctLetter = horizontalWord?.[tile.col - 1] ?? verticalWord?.[tile.row - 1];
+
+  if (tile.letter === correctLetter) {
     return "green";
   }
 
-  if (horizontalWord?.includes(letter) || verticalWord?.includes(letter)) {
+  const rowTiles = allTiles.filter((other) => other.row === tile.row);
+  const colTiles = allTiles.filter((other) => other.col === tile.col);
+
+  if (
+    isLetterNeeded(horizontalWord, tile.letter, rowTiles, "row") ||
+    isLetterNeeded(verticalWord, tile.letter, colTiles, "col")
+  ) {
     return "yellow";
   }
 
   return "gray";
 }
 
+function withVariants(rawTiles: RawTile[]): BoardTile[] {
+  return rawTiles.map((tile) => ({ ...tile, variant: getTileVariant(tile, rawTiles) }));
+}
+
 function Board({ movesLeft, onSwap }: BoardProps) {
-  const [tiles, setTiles] = useState<BoardTile[]>(() =>
-    RAW_TILES.map((tile) => ({ ...tile, variant: getTileVariant(tile.col, tile.row, tile.letter) })),
-  );
+  const [tiles, setTiles] = useState<BoardTile[]>(() => withVariants(RAW_TILES));
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [hasWon, setHasWon] = useState(false);
   const [showMovesExhaustedDialog, setShowMovesExhaustedDialog] = useState(false);
@@ -82,17 +105,19 @@ function Board({ movesLeft, onSwap }: BoardProps) {
       return;
     }
 
-    const nextTiles = tiles.map((tile) => {
+    const nextRawTiles = tiles.map((tile) => {
       if (tile.position === selectedPosition) {
-        return { ...tile, letter: second.letter, variant: getTileVariant(tile.col, tile.row, second.letter) };
+        return { ...tile, letter: second.letter };
       }
 
       if (tile.position === position) {
-        return { ...tile, letter: first.letter, variant: getTileVariant(tile.col, tile.row, first.letter) };
+        return { ...tile, letter: first.letter };
       }
 
       return tile;
     });
+
+    const nextTiles = withVariants(nextRawTiles);
 
     setTiles(nextTiles);
     setSelectedPosition(null);
