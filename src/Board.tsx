@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import Tile, { type TileVariant } from "./Tile";
 import MovesExhaustedDialog from "./MovesExhaustedDialog";
 import boardConfig from "./board.json";
@@ -19,8 +20,19 @@ type BoardProps = {
   onSwap: () => void;
 };
 
+type Point = {
+  x: number;
+  y: number;
+};
+
+type Size = {
+  width: number;
+  height: number;
+};
+
 const RAW_TILES = boardConfig.tiles as RawTile[];
 const WORDS: Record<string, string | undefined> = boardConfig.words;
+const DRAG_THRESHOLD_PX = 6;
 
 function isLetterNeeded(word: string | undefined, letter: string, wordTiles: RawTile[], axis: "row" | "col"): boolean {
   if (!word || !word.includes(letter)) {
@@ -70,14 +82,25 @@ function findTilePositionAt(x: number, y: number): number | null {
   return rawPosition !== undefined ? Number(rawPosition) : null;
 }
 
+function distanceBetween(a: Point, b: Point): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
 function Board({ movesLeft, onSwap }: BoardProps) {
   const [tiles, setTiles] = useState<BoardTile[]>(() => withVariants(RAW_TILES));
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [activePosition, setActivePosition] = useState<number | null>(null);
   const [hoverPosition, setHoverPosition] = useState<number | null>(null);
+  const [hasMoved, setHasMoved] = useState(false);
+  const [pointerPoint, setPointerPoint] = useState<Point | null>(null);
+  const [draggedTileSize, setDraggedTileSize] = useState<Size | null>(null);
   const [hasWon, setHasWon] = useState(false);
   const [showMovesExhaustedDialog, setShowMovesExhaustedDialog] = useState(false);
   const skipNextClickRef = useRef(false);
+  const dragStartPointRef = useRef<Point | null>(null);
+
+  const draggedTile =
+    hasMoved && activePosition !== null ? tiles.find((tile) => tile.position === activePosition) : undefined;
 
   const canInteract = () => {
     if (showMovesExhaustedDialog) {
@@ -163,6 +186,15 @@ function Board({ movesLeft, onSwap }: BoardProps) {
     handleTap(position);
   };
 
+  const endDrag = () => {
+    setActivePosition(null);
+    setHasMoved(false);
+    setHoverPosition(null);
+    setPointerPoint(null);
+    setDraggedTileSize(null);
+    dragStartPointRef.current = null;
+  };
+
   const handlePointerDown = (position: number, event: PointerEvent<HTMLButtonElement>) => {
     if (activePosition !== null) {
       return;
@@ -176,17 +208,43 @@ function Board({ movesLeft, onSwap }: BoardProps) {
       return;
     }
 
-    event.currentTarget.setPointerCapture(event.pointerId);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const point = { x: event.clientX, y: event.clientY };
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Capture is best-effort: hit-testing below relies on elementFromPoint, not on capture.
+    }
+
+    dragStartPointRef.current = point;
     setActivePosition(position);
+    setHasMoved(false);
     setHoverPosition(null);
+    setPointerPoint(point);
+    setDraggedTileSize({ width: rect.width, height: rect.height });
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
-    if (activePosition === null) {
+    if (activePosition === null || dragStartPointRef.current === null) {
       return;
     }
 
-    const hovered = findTilePositionAt(event.clientX, event.clientY);
+    const point = { x: event.clientX, y: event.clientY };
+
+    setPointerPoint(point);
+
+    const isDragging = hasMoved || distanceBetween(point, dragStartPointRef.current) > DRAG_THRESHOLD_PX;
+
+    if (isDragging && !hasMoved) {
+      setHasMoved(true);
+    }
+
+    if (!isDragging) {
+      return;
+    }
+
+    const hovered = findTilePositionAt(point.x, point.y);
 
     setHoverPosition(hovered !== null && hovered !== activePosition ? hovered : null);
   };
@@ -197,14 +255,14 @@ function Board({ movesLeft, onSwap }: BoardProps) {
     }
 
     const pressedPosition = activePosition;
+    const wasDragging = hasMoved;
     const droppedOnPosition = hoverPosition;
 
-    setActivePosition(null);
-    setHoverPosition(null);
+    endDrag();
     skipNextClickRef.current = true;
 
-    if (droppedOnPosition !== null) {
-      if (canInteract()) {
+    if (wasDragging) {
+      if (droppedOnPosition !== null && canInteract()) {
         swapTiles(pressedPosition, droppedOnPosition);
         setSelectedPosition(null);
       }
@@ -216,8 +274,7 @@ function Board({ movesLeft, onSwap }: BoardProps) {
   };
 
   const handlePointerCancel = () => {
-    setActivePosition(null);
-    setHoverPosition(null);
+    endDrag();
   };
 
   return (
@@ -234,6 +291,7 @@ function Board({ movesLeft, onSwap }: BoardProps) {
             col={tile.col}
             row={tile.row}
             position={tile.position}
+            hidden={tile.position === activePosition && hasMoved}
             state={
               tile.position === activePosition
                 ? "active"
@@ -249,6 +307,30 @@ function Board({ movesLeft, onSwap }: BoardProps) {
           />
         ))}
       </div>
+
+      {draggedTile &&
+        pointerPoint &&
+        draggedTileSize &&
+        createPortal(
+          <div
+            className="pointer-events-none fixed z-30"
+            style={{
+              left: pointerPoint.x,
+              top: pointerPoint.y,
+              width: draggedTileSize.width,
+              height: draggedTileSize.height,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <Tile
+              letter={draggedTile.letter}
+              variant={draggedTile.variant}
+              position={draggedTile.position}
+              state="active"
+            />
+          </div>,
+          document.body,
+        )}
 
       {showMovesExhaustedDialog && <MovesExhaustedDialog onClose={() => setShowMovesExhaustedDialog(false)} />}
     </div>

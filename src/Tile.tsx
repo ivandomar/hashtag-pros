@@ -6,10 +6,11 @@ export type TileState = "default" | "active" | "selected";
 type TileProps = {
   letter: string;
   variant: TileVariant;
-  col: number;
-  row: number;
+  col?: number;
+  row?: number;
   position: number;
   state?: TileState;
+  hidden?: boolean;
   onClick?: () => void;
   onPointerDown?: (event: PointerEvent<HTMLButtonElement>) => void;
   onPointerMove?: (event: PointerEvent<HTMLButtonElement>) => void;
@@ -36,6 +37,7 @@ function Tile({
   row,
   position,
   state = "default",
+  hidden = false,
   onClick,
   onPointerDown,
   onPointerMove,
@@ -52,11 +54,11 @@ function Tile({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
       aria-pressed={state === "selected"}
-      className={`flex cursor-pointer touch-none items-center justify-center font-ui text-[30px] font-medium
-        select-none ${VARIANT_CLASSES[variant]} ${STATE_CLASSES[state]}`}
+      className={`flex size-full cursor-pointer touch-none items-center justify-center font-ui text-[30px]
+        font-medium select-none ${hidden ? "" : `${VARIANT_CLASSES[variant]} ${STATE_CLASSES[state]}`}`}
       style={{ gridColumn: col, gridRow: row }}
     >
-      {letter}
+      {hidden ? null : letter}
     </button>
   );
 }
