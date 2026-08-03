@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Tile, { type TileVariant } from "./Tile";
+import MovesExhaustedDialog from "./MovesExhaustedDialog";
 import boardConfig from "./board.json";
 
 type RawTile = {
@@ -43,8 +44,13 @@ function Board({ movesLeft, onSwap }: BoardProps) {
   );
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [hasWon, setHasWon] = useState(false);
+  const [showMovesExhaustedDialog, setShowMovesExhaustedDialog] = useState(false);
 
   const handleTileClick = (position: number) => {
+    if (showMovesExhaustedDialog) {
+      return;
+    }
+
     if (hasWon) {
       window.alert("Você já venceu! Não é possível continuar jogando.");
 
@@ -95,6 +101,8 @@ function Board({ movesLeft, onSwap }: BoardProps) {
     if (nextTiles.every((tile) => tile.variant === "green")) {
       setHasWon(true);
       window.alert("Parabéns! Você venceu o jogo!");
+    } else if (movesLeft <= 1) {
+      setShowMovesExhaustedDialog(true);
     }
   };
 
@@ -116,6 +124,8 @@ function Board({ movesLeft, onSwap }: BoardProps) {
           />
         ))}
       </div>
+
+      {showMovesExhaustedDialog && <MovesExhaustedDialog onClose={() => setShowMovesExhaustedDialog(false)} />}
     </div>
   );
 }
