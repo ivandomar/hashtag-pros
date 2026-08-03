@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import Tile, { type TileVariant } from "./Tile";
 import MovesExhaustedDialog from "./MovesExhaustedDialog";
 import boardConfig from "./board.json";
@@ -63,26 +63,77 @@ function withVariants(rawTiles: RawTile[]): BoardTile[] {
   return rawTiles.map((tile) => ({ ...tile, variant: getTileVariant(tile, rawTiles) }));
 }
 
+function findTilePositionAt(x: number, y: number): number | null {
+  const target = document.elementFromPoint(x, y)?.closest("[data-position]");
+  const rawPosition = target instanceof HTMLElement ? target.dataset.position : undefined;
+
+  return rawPosition !== undefined ? Number(rawPosition) : null;
+}
+
 function Board({ movesLeft, onSwap }: BoardProps) {
   const [tiles, setTiles] = useState<BoardTile[]>(() => withVariants(RAW_TILES));
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+  const [activePosition, setActivePosition] = useState<number | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<number | null>(null);
   const [hasWon, setHasWon] = useState(false);
   const [showMovesExhaustedDialog, setShowMovesExhaustedDialog] = useState(false);
+  const skipNextClickRef = useRef(false);
 
-  const handleTileClick = (position: number) => {
+  const canInteract = () => {
     if (showMovesExhaustedDialog) {
-      return;
+      return false;
     }
 
     if (hasWon) {
       window.alert("Você já venceu! Não é possível continuar jogando.");
 
-      return;
+      return false;
     }
 
     if (movesLeft <= 0) {
       window.alert("Seus movimentos acabaram! Não é possível selecionar mais peças.");
 
+      return false;
+    }
+
+    return true;
+  };
+
+  const swapTiles = (positionA: number, positionB: number) => {
+    const first = tiles.find((tile) => tile.position === positionA);
+    const second = tiles.find((tile) => tile.position === positionB);
+
+    if (!first || !second) {
+      return;
+    }
+
+    const nextRawTiles = tiles.map((tile) => {
+      if (tile.position === positionA) {
+        return { ...tile, letter: second.letter };
+      }
+
+      if (tile.position === positionB) {
+        return { ...tile, letter: first.letter };
+      }
+
+      return tile;
+    });
+
+    const nextTiles = withVariants(nextRawTiles);
+
+    setTiles(nextTiles);
+    onSwap();
+
+    if (nextTiles.every((tile) => tile.variant === "green")) {
+      setHasWon(true);
+      window.alert("Parabéns! Você venceu o jogo!");
+    } else if (movesLeft <= 1) {
+      setShowMovesExhaustedDialog(true);
+    }
+  };
+
+  const handleTap = (position: number) => {
+    if (!canInteract()) {
       return;
     }
 
@@ -98,37 +149,75 @@ function Board({ movesLeft, onSwap }: BoardProps) {
       return;
     }
 
-    const first = tiles.find((tile) => tile.position === selectedPosition);
-    const second = tiles.find((tile) => tile.position === position);
+    swapTiles(selectedPosition, position);
+    setSelectedPosition(null);
+  };
 
-    if (!first || !second) {
+  const handleClick = (position: number) => {
+    if (skipNextClickRef.current) {
+      skipNextClickRef.current = false;
+
       return;
     }
 
-    const nextRawTiles = tiles.map((tile) => {
-      if (tile.position === selectedPosition) {
-        return { ...tile, letter: second.letter };
-      }
+    handleTap(position);
+  };
 
-      if (tile.position === position) {
-        return { ...tile, letter: first.letter };
-      }
-
-      return tile;
-    });
-
-    const nextTiles = withVariants(nextRawTiles);
-
-    setTiles(nextTiles);
-    setSelectedPosition(null);
-    onSwap();
-
-    if (nextTiles.every((tile) => tile.variant === "green")) {
-      setHasWon(true);
-      window.alert("Parabéns! Você venceu o jogo!");
-    } else if (movesLeft <= 1) {
-      setShowMovesExhaustedDialog(true);
+  const handlePointerDown = (position: number, event: PointerEvent<HTMLButtonElement>) => {
+    if (activePosition !== null) {
+      return;
     }
+
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    if (!canInteract()) {
+      return;
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setActivePosition(position);
+    setHoverPosition(null);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+    if (activePosition === null) {
+      return;
+    }
+
+    const hovered = findTilePositionAt(event.clientX, event.clientY);
+
+    setHoverPosition(hovered !== null && hovered !== activePosition ? hovered : null);
+  };
+
+  const handlePointerUp = () => {
+    if (activePosition === null) {
+      return;
+    }
+
+    const pressedPosition = activePosition;
+    const droppedOnPosition = hoverPosition;
+
+    setActivePosition(null);
+    setHoverPosition(null);
+    skipNextClickRef.current = true;
+
+    if (droppedOnPosition !== null) {
+      if (canInteract()) {
+        swapTiles(pressedPosition, droppedOnPosition);
+        setSelectedPosition(null);
+      }
+
+      return;
+    }
+
+    handleTap(pressedPosition);
+  };
+
+  const handlePointerCancel = () => {
+    setActivePosition(null);
+    setHoverPosition(null);
   };
 
   return (
@@ -144,8 +233,19 @@ function Board({ movesLeft, onSwap }: BoardProps) {
             variant={tile.variant}
             col={tile.col}
             row={tile.row}
-            state={tile.position === selectedPosition ? "selected" : "default"}
-            onClick={() => handleTileClick(tile.position)}
+            position={tile.position}
+            state={
+              tile.position === activePosition
+                ? "active"
+                : tile.position === hoverPosition || tile.position === selectedPosition
+                  ? "selected"
+                  : "default"
+            }
+            onClick={() => handleClick(tile.position)}
+            onPointerDown={(event) => handlePointerDown(tile.position, event)}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
           />
         ))}
       </div>

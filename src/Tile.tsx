@@ -1,3 +1,5 @@
+import type { PointerEvent } from "react";
+
 export type TileVariant = "gray" | "yellow" | "green";
 export type TileState = "default" | "active" | "selected";
 
@@ -6,8 +8,13 @@ type TileProps = {
   variant: TileVariant;
   col: number;
   row: number;
+  position: number;
   state?: TileState;
   onClick?: () => void;
+  onPointerDown?: (event: PointerEvent<HTMLButtonElement>) => void;
+  onPointerMove?: (event: PointerEvent<HTMLButtonElement>) => void;
+  onPointerUp?: (event: PointerEvent<HTMLButtonElement>) => void;
+  onPointerCancel?: (event: PointerEvent<HTMLButtonElement>) => void;
 };
 
 const VARIANT_CLASSES: Record<TileVariant, string> = {
@@ -22,14 +29,31 @@ const STATE_CLASSES: Record<TileState, string> = {
   selected: "border-[3px] border-[#2babf0]",
 };
 
-function Tile({ letter, variant, col, row, state = "default", onClick }: TileProps) {
+function Tile({
+  letter,
+  variant,
+  col,
+  row,
+  position,
+  state = "default",
+  onClick,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+}: TileProps) {
   return (
     <button
       type="button"
+      data-position={position}
       onClick={onClick}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       aria-pressed={state === "selected"}
-      className={`flex cursor-pointer items-center justify-center font-ui text-[30px] font-medium select-none
-        ${VARIANT_CLASSES[variant]} ${STATE_CLASSES[state]}`}
+      className={`flex cursor-pointer touch-none items-center justify-center font-ui text-[30px] font-medium
+        select-none ${VARIANT_CLASSES[variant]} ${STATE_CLASSES[state]}`}
       style={{ gridColumn: col, gridRow: row }}
     >
       {letter}
